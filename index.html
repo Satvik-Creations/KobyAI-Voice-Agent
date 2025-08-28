@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Agent - Hindi/Hinglish Support</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0a0a0a;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #111;
+        }
+
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ff8c00, #ff6600);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 16px;
+        }
+
+        .app-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .language-selector {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .language-label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .language-toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 26px;
+            height: 26px;
+            background: #fc8b00;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-slider.hindi {
+            left: 32px;
+        }
+
+        .toggle-label {
+            position: absolute;
+            top: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .toggle-label.english {
+            left: 8px;
+            color: white;
+        }
+
+        .toggle-label.hindi {
+            right: 8px;
+            color: white;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff8c00, #ff6600);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #333;
+        }
+
+        .message-content {
+            background: #222;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border: 1px solid #333;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.user .message-content {
+            background: #ff8c00;
+            color: white;
+        }
+
+        .controls {
+            padding: 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .voice-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff8c00, #ff6600);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3);
+        }
+
+        .voice-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(255, 140, 0, 0.4);
+        }
+
+        .voice-button.recording {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .voice-button.processing {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 8px 40px rgba(255, 140, 0, 0.6);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3);
+            }
+        }
+
+        .mic-icon {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+
+        .setup-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .setup-content {
+            background: #222;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .setup-content h2 {
+            margin-bottom: 20px;
+            color: #ff8c00;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #333;
+            color: white;
+            font-size: 14px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff8c00;
+        }
+
+        .setup-button {
+            background: linear-gradient(135deg, #ff8c00, #ff6600);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .setup-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3);
+        }
+
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+            background: #222;
+            border-radius: 18px;
+            border: 1px solid #333;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff8c00;
+            animation: typing 1.4s ease-in-out infinite both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(3) { animation-delay: 0; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <img src="https://videos.openai.com/vg-assets/assets%2Fclient_upload%2Fmedia%2F9ba80388769dc72355ab06c777a221e4eb7dcf3b%2Fmedia_01k20bndfqepe9vnk7cpq3p2wb.png?st=2025-08-28T13%3A43%3A34Z&se=2025-09-03T14%3A43%3A34Z&sks=b&skt=2025-08-28T13%3A43%3A34Z&ske=2025-09-03T14%3A43%3A34Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=5e5fc900-07cf-43e7-ab5b-314c0d877bb0&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=v6jGANS%2BZoDdkoqSxpXofAanvEIWKjbuHmUnAabfqJE%3D&az=oaivgprodscus" alt="KobyAI Logo" width="40" height="40">
+            </div>
+            <div class="app-name">KobyAI</div>
+            <div class="language-selector">
+                <span class="language-label">Language:</span>
+                <div class="language-toggle" id="languageToggle">
+                    <div class="toggle-label english">EN</div>
+                    <div class="toggle-label hindi">HI</div>
+                    <div class="toggle-slider" id="toggleSlider"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message">
+                <div class="message-avatar">
+                    <img src="https://videos.openai.com/vg-assets/assets%2Fclient_upload%2Fmedia%2F9ba80388769dc72355ab06c777a221e4eb7dcf3b%2Fmedia_01k20bndfqepe9vnk7cpq3p2wb.png?st=2025-08-28T13%3A43%3A34Z&se=2025-09-03T14%3A43%3A34Z&sks=b&skt=2025-08-28T13%3A43%3A34Z&ske=2025-09-03T14%3A43%3A34Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=5e5fc900-07cf-43e7-ab5b-314c0d877bb0&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=v6jGANS%2BZoDdkoqSxpXofAanvEIWKjbuHmUnAabfqJE%3D&az=oaivgprodscus" alt="Avatar" width="35" height="35">
+                </div>
+                <div class="message-content">
+                    Hello! Tap the mic and ask me anything. / नमस्ते! माइक पर टैप करके मुझसे कुछ भी पूछें।
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="voice-button" id="voiceButton">
+                <svg class="mic-icon" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"/>
+                </svg>
+            </button>
+            <div class="status-text" id="statusText">Tap the mic to speak</div>
+        </div>
+    </div>
+
+    <div class="setup-panel" id="setupPanel">
+        <div class="setup-content">
+            <h2>Setup Voice Agent</h2>
+            <div class="input-group">
+                <label for="groqApiKey">Groq API Key:</label>
+                <input type="password" id="groqApiKey" placeholder="Enter your Groq API key">
+            </div>
+            <button class="setup-button" onclick="saveSettings()">Start Voice Agent</button>
+            <div id="errorMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        class VoiceAgent {
+            constructor() {
+                this.groqApiKey = '';
+                this.isRecording = false;
+                this.isProcessing = false;
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.currentLanguage = 'en-US'; // Default to English
+                
+                this.voiceButton = document.getElementById('voiceButton');
+                this.statusText = document.getElementById('statusText');
+                this.chatContainer = document.getElementById('chatContainer');
+                this.setupPanel = document.getElementById('setupPanel');
+                this.languageToggle = document.getElementById('languageToggle');
+                this.toggleSlider = document.getElementById('toggleSlider');
+                
+                this.initializeVoiceRecognition();
+                this.bindEvents();
+            }
+            
+            initializeVoiceRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = this.currentLanguage;
+                    this.recognition.maxAlternatives = 1;
+                    
+                    this.recognition.onstart = () => {
+                        console.log('Speech recognition started');
+                        this.isRecording = true;
+                        this.voiceButton.classList.add('recording');
+                        this.statusText.textContent = this.currentLanguage === 'hi-IN' ? 'सुन रहा हूँ...' : 'Listening...';
+                    };
+                    
+                    this.recognition.onresult = (event) => {
+                        console.log('Speech recognition result:', event);
+                        if (event.results.length > 0) {
+                            const transcript = event.results[0][0].transcript;
+                            console.log('Transcript:', transcript);
+                            if (transcript.trim()) {
+                                this.handleUserInput(transcript.trim());
+                            }
+                        }
+                    };
+                    
+                    this.recognition.onerror = (event) => {
+                        console.error('Speech recognition error:', event.error);
+                        this.resetVoiceButton();
+                        
+                        let errorMessage = this.currentLanguage === 'hi-IN' 
+                            ? 'त्रुटि हुई। पुनः प्रयास करें।' 
+                            : 'Error occurred. Try again.';
+                            
+                        switch(event.error) {
+                            case 'no-speech':
+                                errorMessage = this.currentLanguage === 'hi-IN' 
+                                    ? 'कोई आवाज़ नहीं सुनाई दी। जोर से बोलने का प्रयास करें।' 
+                                    : 'No speech detected. Try speaking louder.';
+                                break;
+                            case 'audio-capture':
+                                errorMessage = this.currentLanguage === 'hi-IN' 
+                                    ? 'माइक्रोफ़ोन अनुपलब्ध या एक्सेस अस्वीकृत।' 
+                                    : 'Microphone access denied or not available.';
+                                break;
+                            case 'not-allowed':
+                                errorMessage = this.currentLanguage === 'hi-IN' 
+                                    ? 'माइक्रोफ़ोन अनुमति अस्वीकृत।' 
+                                    : 'Microphone permission denied.';
+                                break;
+                            case 'network':
+                                errorMessage = this.currentLanguage === 'hi-IN' 
+                                    ? 'नेटवर्क त्रुटि। कनेक्शन जांचें।' 
+                                    : 'Network error. Check your connection.';
+                                break;
+                        }
+                        
+                        this.statusText.textContent = errorMessage;
+                        setTimeout(() => {
+                            this.statusText.textContent = this.currentLanguage === 'hi-IN' 
+                                ? 'बोलने के लिए माइक पर टैप करें' 
+                                : 'Tap the mic to speak';
+                        }, 3000);
+                    };
+                    
+                    this.recognition.onend = () => {
+                        console.log('Speech recognition ended');
+                        this.isRecording = false;
+                        this.voiceButton.classList.remove('recording');
+                        if (!this.isProcessing) {
+                            this.statusText.textContent = this.currentLanguage === 'hi-IN' 
+                                ? 'बोलने के लिए माइक पर टैप करें' 
+                                : 'Tap the mic to speak';
+                        }
+                    };
+                } else {
+                    console.error('Speech recognition not supported');
+                    this.statusText.textContent = this.currentLanguage === 'hi-IN' 
+                        ? 'इस ब्राउज़र में वॉयस रिकग्निशन समर्थित नहीं है' 
+                        : 'Voice recognition not supported in this browser';
+                }
+            }
+            
+            bindEvents() {
+                this.voiceButton.addEventListener('click', () => {
+                    if (this.isProcessing) return;
+                    
+                    if (this.isRecording) {
+                        this.stopRecording();
+                    } else {
+                        this.startRecording();
+                    }
+                });
+                
+                this.languageToggle.addEventListener('click', () => {
+                    this.toggleLanguage();
+                });
+            }
+            
+            toggleLanguage() {
+                this.currentLanguage = this.currentLanguage === 'en-US' ? 'hi-IN' : 'en-US';
+                
+                // Update UI
+                if (this.currentLanguage === 'hi-IN') {
+                    this.toggleSlider.classList.add('hindi');
+                    this.statusText.textContent = 'बोलने के लिए माइक पर टैप करें';
+                } else {
+                    this.toggleSlider.classList.remove('hindi');
+                    this.statusText.textContent = 'Tap the mic to speak';
+                }
+                
+                // Reinitialize recognition with new language
+                if (this.recognition) {
+                    this.recognition.lang = this.currentLanguage;
+                }
+                
+                console.log('Language switched to:', this.currentLanguage);
+            }
+            
+            startRecording() {
+                if (this.recognition && !this.isRecording) {
+                    this.recognition.start();
+                }
+            }
+            
+            stopRecording() {
+                if (this.recognition && this.isRecording) {
+                    this.recognition.stop();
+                }
+            }
+            
+            async handleUserInput(transcript) {
+                // Stop any ongoing speech synthesis
+                this.synthesis.cancel();
+                
+                this.addMessage(transcript, true);
+                this.setProcessingState(true);
+                
+                try {
+                    const response = await this.sendToGroq(transcript);
+                    this.addMessage(response, false);
+                    
+                    // Wait a moment before speaking to ensure message is displayed
+                    setTimeout(() => {
+                        this.speakResponse(response);
+                    }, 200);
+                    
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                    let errorMsg = this.currentLanguage === 'hi-IN' 
+                        ? 'क्षमा करें, मुझे एक त्रुटि का सामना करना पड़ा। कृपया पुनः प्रयास करें।' 
+                        : 'Sorry, I encountered an error. Please try again.';
+                    
+                    if (error.message.includes('API key')) {
+                        errorMsg = this.currentLanguage === 'hi-IN' 
+                            ? 'अमान्य API कुंजी। कृपया अपनी सेटिंग्स जांचें।' 
+                            : 'Invalid API key. Please check your settings.';
+                        // Show setup panel again
+                        setTimeout(() => {
+                            this.setupPanel.style.display = 'flex';
+                        }, 2000);
+                    } else if (error.message.includes('rate limit')) {
+                        errorMsg = this.currentLanguage === 'hi-IN' 
+                            ? 'बहुत सारे अनुरोध। कृपया कुछ क्षण प्रतीक्षा करें।' 
+                            : 'Too many requests. Please wait a moment.';
+                    }
+                    
+                    this.addMessage(errorMsg, false);
+                    this.speakResponse(errorMsg);
+                } finally {
+                    this.setProcessingState(false);
+                }
+            }
+            
+            async sendToGroq(message) {
+                try {
+                    // Determine if the message is in Hindi/Hinglish or English
+                    const isHindi = /[\u0900-\u097F]/.test(message) || this.currentLanguage === 'hi-IN';
+                    
+                    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.groqApiKey}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'llama3-8b-8192',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: isHindi 
+                                        ? 'You are a helpful AI assistant that speaks both English and Hindi/Hinglish. Respond in the same language as the user. Keep responses concise and conversational, suitable for voice interaction. Respond in 1-2 sentences maximum.'
+                                        : 'You are a helpful AI assistant. Keep your responses concise and conversational, suitable for voice interaction. Respond in 1-2 sentences maximum.'
+                                },
+                                {
+                                    role: 'user',
+                                    content: message
+                                }
+                            ],
+                            max_tokens: 100,
+                            temperature: 0.7,
+                            top_p: 1,
+                            stream: false
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Groq API Error:', response.status, errorText);
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                        throw new Error('Invalid API response format');
+                    }
+                    
+                    return data.choices[0].message.content.trim();
+                } catch (error) {
+                    console.error('Groq API Error:', error);
+                    if (error.message.includes('401')) {
+                        throw new Error('Invalid API key. Please check your Groq API key.');
+                    } else if (error.message.includes('429')) {
+                        throw new Error('API rate limit exceeded. Please try again later.');
+                    } else {
+                        throw new Error('Failed to connect to AI service.');
+                    }
+                }
+            }
+            
+            addMessage(content, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user' : ''}`;
+                
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">${isUser ? '👤' : 'K'}</div>
+                    <div class="message-content">${content}</div>
+                `;
+                
+                this.chatContainer.appendChild(messageDiv);
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+            
+            addTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message';
+                typingDiv.id = 'typingIndicator';
+                typingDiv.innerHTML = `
+                    <div class="message-avatar">K</div>
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                
+                this.chatContainer.appendChild(typingDiv);
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+            
+            removeTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+            
+            setProcessingState(processing) {
+                this.isProcessing = processing;
+                
+                if (processing) {
+                    this.voiceButton.classList.add('processing');
+                    this.statusText.textContent = this.currentLanguage === 'hi-IN' 
+                        ? 'प्रोसेसिंग...' 
+                        : 'Processing...';
+                    this.addTypingIndicator();
+                } else {
+                    this.voiceButton.classList.remove('processing');
+                    this.statusText.textContent = this.currentLanguage === 'hi-IN' 
+                        ? 'बोलने के लिए माइक पर टैप करें' 
+                        : 'Tap the mic to speak';
+                    this.removeTypingIndicator();
+                }
+            }
+            
+            resetVoiceButton() {
+                this.isRecording = false;
+                this.isProcessing = false;
+                this.voiceButton.classList.remove('recording', 'processing');
+                this.statusText.textContent = this.currentLanguage === 'hi-IN' 
+                    ? 'बोलने के लिए माइक पर टैप करें' 
+                    : 'Tap the mic to speak';
+            }
+            
+            speakResponse(text) {
+                // Cancel any ongoing speech
+                this.synthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Detect if the response is in Hindi
+                const isHindi = /[\u0900-\u097F]/.test(text);
+                
+                if (isHindi) {
+                    // Settings for Hindi speech
+                    utterance.lang = 'hi-IN';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                } else {
+                    // Settings for English speech
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.3;
+                    utterance.volume = 1.0;
+                }
+                
+                // Find appropriate voice
+                const voices = this.synthesis.getVoices();
+                let selectedVoice = null;
+                
+                if (isHindi) {
+                    // Try to find a Hindi voice
+                    selectedVoice = voices.find(voice => 
+                        voice.lang === 'hi-IN' || voice.lang.startsWith('hi')
+                    );
+                    
+                    // If no Hindi voice found, try to find a voice that supports Hindi
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => 
+                            voice.lang.includes('IN') || voice.lang.includes('India')
+                        );
+                    }
+                } else {
+                    // For English, use the original voice selection logic
+                    const preferredVoices = [
+                        voices.find(voice => voice.name.includes('Karen') && voice.lang.startsWith('en')),
+                        voices.find(voice => voice.name.includes('Hazel') && voice.lang.startsWith('en')),
+                        voices.find(voice => voice.name.includes('Moira') && voice.lang.startsWith('en')),
+                        voices.find(voice => voice.name.includes('Tessa') && voice.lang.startsWith('en')),
+                        voices.find(voice => voice.name.includes('Samantha')),
+                        voices.find(voice => voice.name.includes('Victoria')),
+                        voices.find(voice => voice.name.includes('Google') && voice.name.includes('Female')),
+                        voices.find(voice => voice.name.includes('Google') && voice.lang === 'en-US'),
+                        voices.find(voice => voice.name.includes('Microsoft Aria')),
+                        voices.find(voice => voice.name.includes('Microsoft Jenny')),
+                        voices.find(voice => voice.name.includes('Microsoft Michelle')),
+                        voices.find(voice => voice.name.includes('UK Female') || voice.name.includes('British')),
+                        voices.find(voice => 
+                            voice.lang.startsWith('en') && 
+                            (voice.name.toLowerCase().includes('female') || voice.gender === 'female') &&
+                            !voice.name.toLowerCase().includes('old')
+                        )
+                    ];
+                    
+                    selectedVoice = preferredVoices.find(voice => voice);
+                }
+                
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                    console.log('Using voice:', selectedVoice.name);
+                }
+                
+                // Slight pause for a more thoughtful delivery
+                setTimeout(() => {
+                    this.synthesis.speak(utterance);
+                }, 150);
+            }
+            
+            setGroqApiKey(apiKey) {
+                this.groqApiKey = apiKey;
+                localStorage.setItem('groqApiKey', apiKey);
+            }
+            
+            loadSettings() {
+                const savedKey = localStorage.getItem('groqApiKey');
+                if (savedKey) {
+                    this.groqApiKey = savedKey;
+                    this.setupPanel.style.display = 'none';
+                    return true;
+                }
+                return false;
+            }
+        }
+        
+        // Initialize the voice agent
+        const voiceAgent = new VoiceAgent();
+        
+        // Load voices when they become available
+        function loadVoices() {
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+            }
+        }
+        
+        // Some browsers load voices asynchronously
+        speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); // Try loading immediately too
+        
+        // Setup functions
+        async function saveSettings() {
+            const groqApiKey = document.getElementById('groqApiKey').value.trim();
+            const errorDiv = document.getElementById('errorMessage');
+            
+            if (!groqApiKey) {
+                errorDiv.innerHTML = '<div class="error-message">Please enter your Groq API key</div>';
+                return;
+            }
+            
+            // Test the API key
+            try {
+                const testResponse = await fetch('https://api.groq.com/openai/v1/models', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${groqApiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!testResponse.ok) {
+                    throw new Error('Invalid API key');
+                }
+                
+                voiceAgent.setGroqApiKey(groqApiKey);
+                document.getElementById('setupPanel').style.display = 'none';
+                errorDiv.innerHTML = '';
+                
+            } catch (error) {
+                console.error('API key validation error:', error);
+                errorDiv.innerHTML = '<div class="error-message">Invalid API key. Please check and try again.</div>';
+            }
+        }
+        
+        // Load settings on page load
+        window.addEventListener('load', () => {
+            if (!voiceAgent.loadSettings()) {
+                document.getElementById('setupPanel').style.display = 'flex';
+            }
+        });
+        
+        // Handle Enter key in setup
+        document.getElementById('groqApiKey').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveSettings();
+            }
+        });
+    </script>
+</body>
+</html>
